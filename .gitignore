@@ -1,0 +1,5 @@
+venv/
+evidence/
+log.txt
+__pycache__/
+*.pyc

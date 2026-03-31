@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Exam Environment</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f7fa;
+}
+
+/* Navbar */
+.navbar {
+    background: #1f4037;
+    padding: 15px 30px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status {
+    background: #28a745;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.timer {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Layout */
+.main-container {
+    display: flex;
+    padding: 30px;
+    gap: 30px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 8px 15px;
+    border: none;
+    background: #1f4037;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background: #28a745;
+}
+
+/* Sections */
+.exam-section {
+    flex: 2;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    height: 85vh;
+    overflow-y: auto;
+}
+
+.subject-section {
+    display: none;
+}
+
+.subject-section.active {
+    display: block;
+}
+
+/* Camera */
+.camera-section {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    text-align: center;
+    height: 85vh;
+    overflow-y: auto;
+}
+
+.camera-section img {
+    width: 100%;
+    border-radius: 10px;
+    border: 3px solid #1f4037;
+}
+
+/* Questions */
+.question-box {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.options label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+/* Buttons */
+button.submit-btn {
+    margin-top: 20px;
+    padding: 12px 25px;
+    background: #1f4037;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Palette */
+.palette-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.palette-container button {
+    width: 35px;
+    height: 35px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.not-answered {
+    background: #dc3545;
+    color: white;
+}
+
+.attempted {
+    background: #28a745;
+    color: white;
+}
+
+/* ---- TOAST NOTIFICATION ---- */
+#toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #dc3545;
+    color: white;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    z-index: 9999;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="toast"></div>
+<div class="navbar">
+    <h2>Secure Exam Environment</h2>
+    <div>
+        <span class="timer" id="timer">00:10:00</span>
+        &nbsp;&nbsp;
+        <span class="status" id="warningCount">Warnings: 0</span>
+    </div>
+</div>
+
+<form id="examForm" method="POST" action="/submit">
+
+<div class="main-container">
+
+<div class="exam-section">
+
+    <!-- SUBJECT TABS -->
+    <div class="tabs">
+        {% for subject in questions.keys() %}
+            <button type="button"
+                    class="tab-btn"
+                    id="btn-{{ subject }}"
+                    onclick="showSubject('{{ subject }}')">
+                {{ subject }}
+            </button>
+        {% endfor %}
+    </div>
+
+    <!-- SUBJECT SECTIONS -->
+    {% for subject, subject_questions in questions.items() %}
+    <div class="subject-section" id="section-{{ subject }}">
+
+        {% for q in subject_questions %}
+        <div class="question-box"
+             id="{{ subject }}-question{{ loop.index }}">
+
+            <h4>{{ loop.index }}. {{ q.question }}</h4>
+
+            <div class="options">
+                {% for opt in q.options %}
+                <label>
+                    <input type="radio"
+                           name="{{ subject }}_{{ loop.index0 }}"
+                           value="{{ opt }}"
+                           onclick="markAttempted('{{ subject }}', {{ loop.index }})">
+                    {{ opt }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="submit-btn">
+        Submit Final Exam
+    </button>
+
+</div>
+
+<!-- CAMERA SECTION -->
+<div class="camera-section">
+    <h3>Live Camera Feed</h3>
+    <img src="{{ url_for('video_feed') }}">
+    <p style="font-size:12px; color:gray;">
+        AI Face Detection Enabled
+    </p>
+
+    <hr style="margin:20px 0;">
+    <h4>Question Palette</h4>
+
+    {% for subject, subject_questions in questions.items() %}
+        <div id="palette-{{ subject }}" class="palette-container" style="display:none;">
+            {% for q in subject_questions %}
+                <button type="button"
+                        id="{{ subject }}-palette{{ loop.index }}"
+                        class="not-answered"
+                        onclick="goToQuestion('{{ subject }}', {{ loop.index }})">
+                    {{ loop.index }}
+                </button>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+
+</div>
+</form>
+
+<script>
+
+/* SUBJECT SWITCH */
+function showSubject(subject) {
+
+    document.querySelectorAll(".subject-section").forEach(sec => {
+        sec.classList.remove("active");
+    });
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    document.querySelectorAll(".palette-container").forEach(p => {
+        p.style.display = "none";
+    });
+
+    document.getElementById("section-" + subject).classList.add("active");
+    document.getElementById("btn-" + subject).classList.add("active");
+    document.getElementById("palette-" + subject).style.display = "flex";
+}
+
+/* Default Subject */
+showSubject("Chemistry");
+
+/* PALETTE SCROLL */
+function goToQuestion(subject, num) {
+    let question = document.getElementById(subject + "-question" + num);
+    if (question) {
+        question.scrollIntoView({ behavior: "smooth" });
+    }
+}
+
+/* MARK ATTEMPTED */
+function markAttempted(subject, num) {
+    let btn = document.getElementById(subject + "-palette" + num);
+    if (btn) {
+        btn.classList.remove("not-answered");
+        btn.classList.add("attempted");
+    }
+}
+
+/* TAB SWITCH WARNING */
+let tabSwitchCount = 0;
+const form = document.getElementById("examForm");
+
+function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 3000);
+}
+
+document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+        tabSwitchCount++;
+
+        // Notify backend to increment warning count
+        fetch('/tab_switch', { method: 'POST' });
+
+        if (tabSwitchCount >= 3) {
+            showToast("⚠️ Multiple tab switches detected! Auto-submitting...");
+            setTimeout(() => { if (form) form.submit(); }, 2000);
+        } else {
+            showToast("⚠️ Tab switch detected! Warning " + tabSwitchCount + "/3");
+        }
+    }
+});
+
+/* TIMER - 10 minutes */
+let totalSeconds = 10 * 60;
+
+function updateTimer() {
+    if (totalSeconds <= 0) {
+        showToast("⏰ Time is up! Submitting exam...");
+        setTimeout(() => { if (form) form.submit(); }, 2000);
+        return;
+    }
+
+    let h = Math.floor(totalSeconds / 3600);
+    let m = Math.floor((totalSeconds % 3600) / 60);
+    let s = totalSeconds % 60;
+
+    document.getElementById("timer").innerText =
+        String(h).padStart(2,'0') + ":" +
+        String(m).padStart(2,'0') + ":" +
+        String(s).padStart(2,'0');
+
+    // Warning toast at 2 mins remaining
+    if (totalSeconds === 120) {
+        showToast("⚠️ 2 minutes remaining!");
+    }
+
+    // Warning toast at 1 min remaining
+    if (totalSeconds === 60) {
+        showToast("⚠️ 1 minute remaining!");
+    }
+
+    totalSeconds--;
+}
+
+setInterval(updateTimer, 1000);
+
+</script>
+
+
+<script>
+/* ---- BUZZ SOUND ON WARNING ---- */
+let lastWarningCount = 0;
+
+function playBuzz() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode   = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.type     = 'square';
+    oscillator.frequency.setValueAtTime(180, ctx.currentTime);
+    gainNode.gain.setValueAtTime(0.6, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.6);
+}
+
+function pollWarnings() {
+    fetch('/warning_status')
+        .then(res => res.json())
+        .then(data => {
+            if (data.warning_count > lastWarningCount) {
+                lastWarningCount = data.warning_count;
+                playBuzz();
+                document.getElementById("warningCount").innerText =
+                    "Warnings: " + data.warning_count;
+            }
+        })
+        .catch(() => {});
+}
+
+// Poll every 1 second
+setInterval(pollWarnings, 1000);
+</script>
+
+</body>
+</html>

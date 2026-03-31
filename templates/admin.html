@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: Arial; background: #f4f6f9; }
+        h1 { text-align: center; }
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th { background: #333; color: white; }
+    </style>
+</head>
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<h2>Users</h2>
+<table>
+<tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th></tr>
+{% for u in users %}
+<tr>
+<td>{{u.id}}</td>
+<td>{{u.name}}</td>
+<td>{{u.email}}</td>
+<td>{{u.role}}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Results</h2>
+<table>
+<tr><th>Name</th><th>Score</th><th>Warnings</th><th>Date</th></tr>
+{% for r in results %}
+<tr>
+<td>{{r.name}}</td>
+<td>{{r.score}}</td>
+<td>{{r.warnings}}</td>
+<td>{{r.created_at}}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Logs</h2>
+<table>
+<tr><th>Name</th><th>Event</th><th>Time</th></tr>
+{% for l in logs %}
+<tr>
+<td>{{l.name}}</td>
+<td>{{l.event_type}}</td>
+<td>{{l.timestamp}}</td>
+</tr>
+{% endfor %}
+</table>
+
+</body>
+</html>

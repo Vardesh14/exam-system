@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Exam Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
+    color: white;
+}
+
+/* Navbar */
+.navbar {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(10px);
+    padding: 18px 40px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.logout-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    cursor: pointer;
+}
+
+/* Grid */
+.container { padding: 30px; }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+/* Cards */
+.card {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 18px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+}
+
+/* Values */
+.value {
+    font-size: 30px;
+    font-weight: bold;
+}
+
+/* Colors */
+.blue { color: #00c6ff; }
+.red { color: #ff6b6b; }
+.green { color: #2ecc71; }
+.yellow { color: #f1c40f; }
+
+/* Progress */
+.progress {
+    background: rgba(255,255,255,0.2);
+    height: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 10px;
+    background: #00c6ff;
+    border-radius: 10px;
+    width: 0%;
+}
+
+/* Activity */
+.activity {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #ff6b6b;
+    padding: 12px 20px;
+    border-radius: 10px;
+    display: none;
+}
+
+/* Button */
+.start-btn {
+    margin-top: 30px;
+    padding: 12px 40px;
+    border-radius: 25px;
+    border: none;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: white;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>AI Proctored Exam</h2>
+    <div id="clock"></div>
+    <a href="/logout"><button class="logout-btn">Logout</button></a>
+</div>
+
+<div class="container">
+
+<h2>Welcome, {{ fullname }}</h2>
+
+<div class="grid">
+
+<div class="card">
+    <h4>Last Score</h4>
+    <div class="value blue">{{ result.score if result else "--" }}</div>
+</div>
+
+<div class="card">
+    <h4>Warnings</h4>
+    <div class="value red" id="warnings">{{ result.warnings if result else 0 }}</div>
+</div>
+
+<div class="card">
+    <h4>Time Left</h4>
+    <div class="value yellow" id="timer">30:00</div>
+</div>
+
+<div class="card">
+    <h4>Status</h4>
+    <div class="value green" id="status">Idle</div>
+</div>
+
+<div class="card">
+    <h4>Camera</h4>
+    <div class="value green" id="cameraStatus">Checking...</div>
+</div>
+
+<div class="card">
+    <h4>Network</h4>
+    <div class="value green" id="network">Online</div>
+</div>
+
+<div class="card">
+    <h4>Progress</h4>
+    <div id="progressText">0%</div>
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+</div>
+
+<div class="card">
+    <h4>Activity Log</h4>
+    <div class="activity" id="activity"></div>
+</div>
+
+</div>
+
+<a href="/exam"><button class="start-btn">Start Exam</button></a>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+/* CLOCK */
+setInterval(()=>{
+    document.getElementById("clock").innerText =
+        new Date().toLocaleTimeString();
+},1000);
+
+/* TIMER */
+let total = 1800;
+let time = total;
+
+setInterval(()=>{
+    let min = Math.floor(time/60);
+    let sec = time%60;
+
+    document.getElementById("timer").innerText =
+        `${min}:${sec<10?'0'+sec:sec}`;
+
+    let progress = ((total-time)/total)*100;
+    document.getElementById("progressBar").style.width = progress+"%";
+    document.getElementById("progressText").innerText =
+        Math.floor(progress)+"%";
+
+    if(time>0) time--;
+},1000);
+
+/* CAMERA */
+navigator.mediaDevices.getUserMedia({video:true})
+.then(()=>{
+    document.getElementById("cameraStatus").innerText="Active";
+    updateActivity("Camera Active");
+})
+.catch(()=>{
+    document.getElementById("cameraStatus").innerText="Blocked";
+    showToast("Camera Blocked!");
+});
+
+/* NETWORK */
+window.addEventListener("offline",()=>{
+    document.getElementById("network").innerText="Offline";
+    showToast("Internet Lost!");
+});
+
+window.addEventListener("online",()=>{
+    document.getElementById("network").innerText="Online";
+});
+
+/* REAL-TIME WARNINGS (FIXED ENDPOINT) */
+setInterval(()=>{
+    fetch('/warning_status')
+    .then(res=>res.json())
+    .then(data=>{
+        document.getElementById("warnings").innerText=data.warning_count;
+
+        if(data.warning_count > 3){
+            showToast("Too many warnings!");
+        }
+    });
+},3000);
+
+/* TAB SWITCH */
+document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){
+        updateActivity("Tab switched!");
+        fetch('/tab_switch',{method:"POST"});
+        showToast("Tab Switch Detected!");
+    }
+});
+
+/* USER ACTIVITY */
+document.addEventListener("mousemove",()=>setActive());
+document.addEventListener("keydown",()=>setActive());
+
+let lastActive = Date.now();
+
+function setActive(){
+    lastActive = Date.now();
+    document.getElementById("status").innerText="Active";
+}
+
+setInterval(()=>{
+    if(Date.now()-lastActive > 5000){
+        document.getElementById("status").innerText="Idle";
+    }
+},2000);
+
+/* ACTIVITY LOG + SEND TO SERVER */
+function updateActivity(msg){
+    let log = document.getElementById("activity");
+    let time = new Date().toLocaleTimeString();
+
+    log.innerHTML = `<div>[${time}] ${msg}</div>` + log.innerHTML;
+
+    // 🔥 send to backend (store in DB)
+    fetch('/log_event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({event: msg})
+    });
+}
+
+/* TOAST */
+function showToast(msg){
+    let t = document.getElementById("toast");
+    t.innerText = msg;
+    t.style.display="block";
+    setTimeout(()=>t.style.display="none",3000);
+}
+
+</script>
+
+</body>
+</html>

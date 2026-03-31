@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Result</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #c3ecf7, #a1c4fd);
+        }
+
+        .result-container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            padding: 50px;
+            border-radius: 20px;
+            width: 450px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            color: #333;
+        }
+
+        .result-container h1 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .score {
+            font-size: 28px;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .score span {
+            color: #0d6efd;
+            font-size: 32px;
+        }
+
+        .marking {
+            text-align: left;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .marking h3 {
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="result-container">
+    <h1>Exam Completed 🎉</h1>
+
+    <div class="score">
+        Your Score: <span>{{ score }}</span> / {{ total }}
+    </div>
+
+    <div class="marking">
+        <h3>Marking Scheme:</h3>
+        +4 for correct <br>
+        -1 for incorrect <br>
+        0 for unattempted
+    </div>
+
+    <a href="{{ url_for('dashboard') }}" class="btn">
+        Return to Dashboard
+    </a>
+</div>
+
+</body>
+</html>
