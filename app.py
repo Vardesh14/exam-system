@@ -3,7 +3,12 @@ from proctor import generate_frames, get_warning_count, increment_warning
 from questions import questions
 import mysql.connector
 
+print(len(questions["Chemistry"]))
+print(len(questions["Physics"]))
+print(len(questions["Mathematics"]))
+
 app = Flask(__name__)
+
 app.secret_key = "supersecretkey"
 
 
@@ -176,11 +181,8 @@ def log_event():
 
 
 # ---------------- EXAM ----------------
-@app.route('/exam')
+@app.route("/exam")
 def exam():
-    if "user" not in session:
-        return redirect(url_for("home"))
-
     return render_template("exam.html", questions=questions)
 
 
